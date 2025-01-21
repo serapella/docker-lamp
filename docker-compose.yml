@@ -9,6 +9,7 @@ services:
       - "1111:80"
     volumes:
       - ./src/:/var/www/html/
+      - ./src/20250121/uploads:/var/www/html/uploads
 
   php:
     build: ./.docker/php
@@ -34,15 +35,15 @@ services:
       MYSQL_USER: username
       MYSQL_PASSWORD: password
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    platform: linux/x86_64
-    ports:
-      - 1113:80
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_USER: username
-      MYSQL_PASSWORD: password
-    depends_on:
-      - db
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:latest
+  #   platform: linux/x86_64
+  #   ports:
+  #     - 1113:80
+  #   environment:
+  #     PMA_HOST: db
+  #     MYSQL_ROOT_PASSWORD: rootpass
+  #     MYSQL_USER: username
+  #     MYSQL_PASSWORD: password
+  #   depends_on:
+  #     - db
