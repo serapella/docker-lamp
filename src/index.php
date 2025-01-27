@@ -1,23 +1,27 @@
 <?php
 require('db.inc.php');
 $errors = [];
+$success = [];
 
 print '<pre>';
 print_r($_FILES);
 print '</pre>';
 
-
-
-// $inputUrl = '';
+$imgUpload = '';
 
 if (isset($_POST['formSubmit'])) {
     $allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     $maxSize = 1 * 1024 * 1024;
-
+    $errors = array();
     $file = $_FILES['imgupload'];
 
+    // Validatie
     if (!in_array($file['type'], $allowedFileTypes)) {
         $errors[] = "Only JPG, JPEG, or PNG files are allowed.";
+    }
+
+    if ($file['error'] !== 0) {
+        $errors[] = "Error uploading image: " . $file['error'];
     }
 
     if ($file['size'] > $maxSize) {
@@ -26,57 +30,27 @@ if (isset($_POST['formSubmit'])) {
 
     if (!count($errors)) {
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $newName = bin2hex(random_bytes(16)) . '.' . $ext;
-        $uploadPath = __DIR__ . '/uploads/' . $newName;
+        $newName = uniqid() . '.' . $ext;
+        $upload_dir = "uploads/";; // aangepast naar src/uploads
+        $upload_file = $upload_dir . $newName;
 
-        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-            $insertId = insertDbImage($uploadPath);
+        // Pad opslaan in de database (relatief pad!!)
+        $insertId = insertDbImage($upload_file);
 
-            if ($insertId) {
-                echo "Image uploaded and saved to database.";
+        if ($insertId) {
+            // Bestand uploaden naar de server
+            if (move_uploaded_file($file['tmp_name'], $upload_file)) {
+                $success[] = "Image uploaded and saved to database.";
             } else {
-                $errors[] = "Error saving image to database.";
+                $errors[] = "Failed to upload image.";
             }
         } else {
-            $errors[] = "Failed to upload image.";
+            $errors[] = "Error saving image to database.";
         }
     }
 }
-//     // validation for URL, (NOT FOR UPLOADES)
-//     if (!isset($_POST['inputUrl'])) {
-//         $errors[] = "URL is required";
-//     } else {
-//         $inputUrl = $_POST['inputUrl'];
 
-//         // check if URL is no longer than 255 characters
-//         if (strlen($inputUrl) == 0) {
-//             $errors[] = "URL is required";
-//         }
-
-//         // check if URL is valid
-//         if (!preg_match("/(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/", $inputUrl)) {
-//             $errors[] = "URL is not valid";
-//         }
-//     }
-
-//     if (!count($errors)) {
-
-
-//         // haal og title, descrr,.... op via api
-//         $ogData = getOgViaApi($inputUrl);
-
-//         $ogtitle = @$ogData->hybridGraph->title ?? '';
-//         $ogdescription = @$ogData->hybridGraph->description ?? '';
-//         $ogimage = @$ogData->hybridGraph->image ?? '';;
-
-//         // insert into db
-//         $id = insertOgLink($inputUrl, $ogtitle, $ogdescription, $ogimage);
-
-//         if (!$id) {
-//             $errors[] = "Something unexplainable happened...";
-//         }
-//     }
-// }
+// Haal afbeeldingen op uit de database
 $items = getDbImages();
 
 ?>
@@ -98,7 +72,6 @@ $items = getDbImages();
 
 <body>
 
-
     <div class="container">
         <section>
             <h2>Upload Image</h2>
@@ -109,6 +82,16 @@ $items = getDbImages();
                     <ul>
                         <?php foreach ($errors as $error) : ?>
                             <li><?= $error; ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php if (count($success)) : ?>
+                <div class="alert alert-success" role="alert">
+                    <ul>
+                        <?php foreach ($success as $msg) : ?>
+                            <li><?= $msg; ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -129,12 +112,9 @@ $items = getDbImages();
                     </div>
                 </div>
             </form>
-
-
         </section>
+
         <main>
-
-
             <h2>Images</h2>
             <div class="table-responsive small">
                 <table class="table table-hover table-striped table-sm">
@@ -147,27 +127,20 @@ $items = getDbImages();
                     </thead>
                     <tbody>
 
-                        <?php foreach ($items as $item): ?>
-
+                        <?php foreach ($items as $item) : ?>
                             <tr>
                                 <td><?= $item['id']; ?></td>
-                                <td><?= '<img src="' . $item['path'] . '" class="thumb" alt= "Image"/>'; ?></td>
+                                <td>
+                                    <img src="uploads/<?= $item['path']; ?>" class="thumb" />
+                                </td>
                                 <td><?= $item['created_date']; ?></td>
-
                             </tr>
-
-                            <?= print_r($item['path']); ?>
-
                         <?php endforeach; ?>
-
 
                     </tbody>
                 </table>
-
-
             </div>
         </main>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

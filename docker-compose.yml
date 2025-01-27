@@ -9,7 +9,7 @@ services:
       - "1111:80"
     volumes:
       - ./src/:/var/www/html/
-      - ./src/20250121/uploads:/var/www/html/uploads
+      - ./src/uploads:/var/www/html/uploads
 
   php:
     build: ./.docker/php
